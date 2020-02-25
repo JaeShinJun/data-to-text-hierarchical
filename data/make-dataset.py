@@ -16,6 +16,9 @@ import pkg_resources
 import json, os, re
 import argparse
 
+# Import for generate day of week
+import datetime
+
 
 # OpenNMT has a fancy pipe
 DELIM = "￨"
@@ -34,6 +37,8 @@ ls_keys = ['PTS_QTR1', 'PTS_QTR2', 'PTS_QTR3', 'PTS_QTR4', 'PTS', 'FG_PCT',
 ls_keys = [f'TEAM-{key}' for key in ls_keys]
 
 
+weekDays = ("Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday")
+
 def _build_home(entry):
     """The team who hosted the game"""
     records = [DELIM.join(['<ent>', '<ent>'])]
@@ -45,6 +50,11 @@ def _build_home(entry):
     
     # Contrary to previous work, IS_HOME is now a unique token at the end
     records.append(DELIM.join(['yes', 'IS_HOME']))
+    
+    entry_date = entry['day'].split("_")
+    date = datetime.date(int(entry_date[2]), int(entry_date[0]), int(entry_date[1]))
+    day_of_week = weekDays[date.weekday()]
+    records.append(DELIM.join([day_of_week, 'DAY_OF_WEEK']))
     
     # We pad the entity to size ENT_SIZE with OpenNMT <blank> token
     records.extend([DELIM.join(['<blank>', '<blank>'])] * (ENT_SIZE - len(records)))
@@ -62,6 +72,11 @@ def _build_vis(entry):
     
     # Contrary to previous work, IS_HOME is now a unique token at the end
     records.append(DELIM.join(['no', 'IS_HOME']))
+    
+    entry_date = entry['day'].split("_")
+    date = datetime.date(int(entry_date[2]), int(entry_date[0]), int(entry_date[1]))
+    day_of_week = weekDays[date.weekday()]
+    records.append(DELIM.join([day_of_week, 'DAY_OF_WEEK']))
     
     # We pad the entity to size ENT_SIZE with OpenNMT <blank> token
     records.extend([DELIM.join(['<blank>', '<blank>'])] * (ENT_SIZE - len(records)))
@@ -153,7 +168,6 @@ if __name__ == '__main__':
         filename = pkg_resources.resource_filename(__name__, filename)
         with open(filename, encoding='utf8', mode='r') as f:
             data = json.load(f)
-           
         input_filename = os.path.join(args.folder, f'{setname}_input.txt')
         output_filename = os.path.join(args.folder, f'{setname}_output.txt')
         with open(input_filename, mode='w', encoding='utf8') as inputf:
